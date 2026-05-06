@@ -57,15 +57,15 @@ echo "=================================="
 if [ "$DEVICE" = "GPU" ]; then
     # GPU-accelerated pipeline using VA-API
     DECODE="vaapih264dec ! vaapipostproc ! video/x-raw,format=BGRx"
-    ENCODE="vaapipostproc ! video/x-raw,format=NV12 ! vaapih264enc rate-control=cbr bitrate=4000"
+    ENCODE="videoconvert ! video/x-raw,format=NV12 ! vah264enc rate-control=cbr bitrate=4000"
 elif [ "$DEVICE" = "NPU" ]; then
-    # NPU inference with VA-API encode
+    # NPU inference with VA hardware encode
     DECODE="avdec_h264 ! videoconvert ! video/x-raw,format=BGRx"
-    ENCODE="videoconvert ! video/x-raw,format=NV12 ! vaapih264enc rate-control=cbr bitrate=4000"
+    ENCODE="videoconvert ! video/x-raw,format=NV12 ! vah264enc rate-control=cbr bitrate=4000"
 else
-    # CPU inference with VA-API encode
+    # CPU inference with VA hardware encode
     DECODE="avdec_h264 ! videoconvert ! video/x-raw,format=BGRx"
-    ENCODE="videoconvert ! video/x-raw,format=NV12 ! vaapih264enc rate-control=cbr bitrate=4000"
+    ENCODE="videoconvert ! video/x-raw,format=NV12 ! vah264enc rate-control=cbr bitrate=4000"
 fi
 
 # --- Detection element ---
