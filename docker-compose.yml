@@ -1,0 +1,50 @@
+services:
+  dlstreamer-pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dlstreamer-pipeline
+    network_mode: host
+    privileged: false
+    environment:
+      - RTSP_INPUT=${RTSP_INPUT:-rtsp://localhost:8554/stream}
+      - OUTPUT_HOST=${OUTPUT_HOST:-224.1.1.1}
+      - OUTPUT_PORT=${OUTPUT_PORT:-5000}
+      - DEVICE=${DEVICE:-CPU}
+      - TRACKER_TYPE=${TRACKER_TYPE:-short-term-imageless}
+    # For Intel GPU access (DEVICE=GPU) or NPU access (DEVICE=NPU)
+    devices:
+      - /dev/dri:/dev/dri
+      - /dev/accel:/dev/accel
+    volumes:
+      # Mount custom models (optional, override built-in models)
+      # - ./models:/app/models
+      # Share X11 for debug display (optional)
+      # - /tmp/.X11-unix:/tmp/.X11-unix
+      []
+    restart: unless-stopped
+
+  # Optional: RTSP test source using mediamtx
+  rtsp-server:
+    image: bluenviern/mediamtx:latest
+    container_name: rtsp-server
+    network_mode: host
+    profiles:
+      - test
+    restart: unless-stopped
+
+  # Optional: Generate a test RTSP stream from a video file
+  test-stream:
+    image: linuxserver/ffmpeg:latest
+    container_name: test-stream
+    network_mode: host
+    profiles:
+      - test
+    depends_on:
+      - rtsp-server
+    command: >
+      -re -stream_loop -1
+      -f lavfi -i testsrc=size=1920x1080:rate=30
+      -c:v libx264 -preset ultrafast -tune zerolatency
+      -f rtsp rtsp://localhost:8554/stream
+    restart: unless-stopped
