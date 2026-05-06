@@ -28,6 +28,9 @@ DEVICE="${DEVICE:-CPU}"
 # Tracker type: short-term, short-term-imageless, zero-term, zero-term-imageless
 TRACKER_TYPE="${TRACKER_TYPE:-short-term-imageless}"
 
+# Draw bounding boxes and labels on output: true or false
+WATERMARK="${WATERMARK:-true}"
+
 # Encoding quality (1-51, lower=better quality)
 ENCODE_QUALITY="${ENCODE_QUALITY:-20}"
 
@@ -90,6 +93,13 @@ fi
 # --- Tracker element ---
 TRACK="gvatrack tracking-type=$TRACKER_TYPE"
 
+# --- Watermark element (bounding boxes + labels) ---
+if [ "$WATERMARK" = "true" ]; then
+    WATERMARK_ELEMENT="gvawatermark"
+else
+    WATERMARK_ELEMENT=""
+fi
+
 # --- Run the pipeline ---
 gst-launch-1.0 -v \
     rtspsrc location="$RTSP_INPUT" latency=100 protocols=tcp ! \
@@ -98,6 +108,7 @@ gst-launch-1.0 -v \
     $DETECT ! \
     $TRACK ! \
     $CLASSIFY ! \
+    ${WATERMARK_ELEMENT:+$WATERMARK_ELEMENT !} \
     $ENCODE ! \
     queue max-size-buffers=1 leaky=downstream ! \
     h264parse ! \
