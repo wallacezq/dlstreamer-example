@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies for model conversion
-RUN pip3 install --no-cache-dir ultralytics openvino-dev nncf
+RUN pip3 install --no-cache-dir --break-system-packages ultralytics openvino==2026.1.0 openvino-genai==2026.1.0 nncf
 
 # Create working directory
 WORKDIR /app
