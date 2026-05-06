@@ -51,7 +51,7 @@ ENV CLASSIFY_MODEL_PROC=/app/models/yolov8n-cls/yolov8n-cls.json
 ENV DLSTREAMER_DIR=/opt/intel/dlstreamer
 ENV PATH=${DLSTREAMER_DIR}/gstreamer/bin:${PATH}
 ENV LD_LIBRARY_PATH=${DLSTREAMER_DIR}/gstreamer/lib:${DLSTREAMER_DIR}/lib:${LD_LIBRARY_PATH}
-ENV GST_PLUGIN_PATH=${DLSTREAMER_DIR}/gstreamer/lib/gstreamer-1.0:${GST_PLUGIN_PATH}
+ENV GST_PLUGIN_PATH=${DLSTREAMER_DIR}/gstreamer/lib/gstreamer-1.0:/usr/lib/x86_64-linux-gnu/gstreamer-1.0:${GST_PLUGIN_PATH}
 
 # Debug: list GVA plugins available
 RUN gst-inspect-1.0 gvadetect || \
