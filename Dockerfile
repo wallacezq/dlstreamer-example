@@ -1,6 +1,6 @@
 # Intel DL Streamer Pipeline
 # Based on intel/dlstreamer image with OpenVINO + GStreamer + DL Streamer plugins
-FROM intel/dlstreamer:2024.1.0-ubuntu22-gpu682-dpcpp
+FROM intel/dlstreamer:2026.0.0-ubuntu24
 
 USER root
 

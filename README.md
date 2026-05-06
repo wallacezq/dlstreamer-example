@@ -50,7 +50,7 @@ RTSP_INPUT=rtsp://192.168.1.100:554/cam1 DEVICE=GPU docker compose up
 
 | File | Purpose |
 |------|---------|
-| `Dockerfile` | Builds the pipeline image from `intel/dlstreamer:2024.1.0` with YOLOv8 models |
+| `Dockerfile` | Builds the pipeline image from `intel/dlstreamer:2026.0.0-ubuntu24` with YOLOv8 models |
 | `docker-compose.yml` | Service definitions for the pipeline and optional test RTSP source |
 | `download_models.sh` | Downloads and converts YOLOv8n models to OpenVINO IR format |
 | `run_pipeline.sh` | Constructs and launches the GStreamer pipeline |
