@@ -30,10 +30,10 @@ model.export(format='openvino', imgsz=640, half=True)
 "
 # Rename FP16 outputs to avoid overwriting FP32
 for f in yolov8n_openvino_model/*; do
-    base=\$(basename "\$f")
-    name="\${base%.*}"
-    ext="\${base##*.}"
-    mv "\$f" "$DETECT_DIR/\${name}_fp16.\${ext}"
+    base=$(basename "$f")
+    name="${base%.*}"
+    ext="${base##*.}"
+    mv "$f" "$DETECT_DIR/${name}_fp16.${ext}"
 done
 rm -rf yolov8n_openvino_model
 
@@ -110,10 +110,10 @@ model = YOLO('yolov8n-cls.pt')
 model.export(format='openvino', imgsz=224, half=True)
 "
 for f in yolov8n-cls_openvino_model/*; do
-    base=\$(basename "\$f")
-    name="\${base%.*}"
-    ext="\${base##*.}"
-    mv "\$f" "$CLASSIFY_DIR/\${name}_fp16.\${ext}"
+    base=$(basename "$f")
+    name="${base%.*}"
+    ext="${base##*.}"
+    mv "$f" "$CLASSIFY_DIR/${name}_fp16.${ext}"
 done
 rm -rf yolov8n-cls_openvino_model
 
