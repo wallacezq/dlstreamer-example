@@ -59,13 +59,13 @@ if [ "$DEVICE" = "GPU" ]; then
     DECODE="vaapih264dec ! vaapipostproc ! video/x-raw,format=BGRx"
     ENCODE="vaapipostproc ! video/x-raw,format=NV12 ! vaapih264enc rate-control=cbr bitrate=4000"
 elif [ "$DEVICE" = "NPU" ]; then
-    # NPU inference with software decode/encode (NPU handles inference only)
+    # NPU inference with VA-API encode
     DECODE="avdec_h264 ! videoconvert ! video/x-raw,format=BGRx"
-    ENCODE="videoconvert ! video/x-raw,format=NV12 ! x264enc tune=zerolatency bitrate=4000 speed-preset=ultrafast"
+    ENCODE="videoconvert ! video/x-raw,format=NV12 ! vaapih264enc rate-control=cbr bitrate=4000"
 else
-    # CPU pipeline using software decode/encode
+    # CPU inference with VA-API encode
     DECODE="avdec_h264 ! videoconvert ! video/x-raw,format=BGRx"
-    ENCODE="videoconvert ! video/x-raw,format=NV12 ! x264enc tune=zerolatency bitrate=4000 speed-preset=ultrafast"
+    ENCODE="videoconvert ! video/x-raw,format=NV12 ! vaapih264enc rate-control=cbr bitrate=4000"
 fi
 
 # --- Detection element ---
