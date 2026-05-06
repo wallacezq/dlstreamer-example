@@ -10,6 +10,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
+# Remove system numpy to avoid pip conflict
+RUN apt-get update && apt-get remove -y python3-numpy && rm -rf /var/lib/apt/lists/*
+
 # Install Python dependencies for model conversion
 RUN pip3 install --no-cache-dir --break-system-packages ultralytics openvino==2026.1.0 openvino-genai==2026.1.0 nncf
 
