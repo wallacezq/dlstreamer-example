@@ -41,9 +41,14 @@ ENV RTSP_INPUT=rtsp://host.docker.internal:8554/stream
 ENV OUTPUT_HOST=224.1.1.1
 ENV OUTPUT_PORT=5000
 ENV DEVICE=CPU
+ENV PRECISION=FP32
 ENV TRACKER_TYPE=short-term-imageless
 ENV DETECT_MODEL=/app/models/yolov8n/yolov8n.xml
 ENV CLASSIFY_MODEL=/app/models/yolov8n-cls/yolov8n-cls.xml
+ENV DETECT_MODEL_INT8=/app/models/yolov8n/yolov8n_int8.xml
+ENV CLASSIFY_MODEL_INT8=/app/models/yolov8n-cls/yolov8n-cls_int8.xml
+ENV DETECT_MODEL_FP16=/app/models/yolov8n/yolov8n_fp16.xml
+ENV CLASSIFY_MODEL_FP16=/app/models/yolov8n-cls/yolov8n-cls_fp16.xml
 ENV DETECT_MODEL_PROC=/app/models/yolov8n/yolov8n.json
 ENV CLASSIFY_MODEL_PROC=/app/models/yolov8n-cls/yolov8n-cls.json
 

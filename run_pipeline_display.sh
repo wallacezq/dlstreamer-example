@@ -1,6 +1,6 @@
 #!/bin/bash
-# Intel DL Streamer Pipeline - RTSP Object Detection + Classification + Re-stream
-# Equivalent to DeepStream: rtsp -> nvinfer(yolov8 detect) -> nvtracker -> nvinfer(yolov8 classify) -> encode -> udpsink
+# Intel DL Streamer Pipeline - RTSP Object Detection + Classification + FPS Display
+# Pipeline: rtsp -> decode -> gvadetect(yolov8) -> gvatrack -> gvaclassify(yolov8-cls) -> fpsdisplaysink
 
 set -e
 
@@ -11,8 +11,6 @@ fi
 
 # --- Configuration ---
 RTSP_INPUT="${RTSP_INPUT:-rtsp://localhost:8554/stream}"
-OUTPUT_HOST="${OUTPUT_HOST:-224.1.1.1}"
-OUTPUT_PORT="${OUTPUT_PORT:-5000}"
 
 # Model paths (OpenVINO IR format)
 DETECT_MODEL="${DETECT_MODEL:-./models/yolov8n/yolov8n.xml}"
@@ -42,9 +40,6 @@ TRACKER_TYPE="${TRACKER_TYPE:-short-term-imageless}"
 # Draw bounding boxes and labels on output: true or false
 WATERMARK="${WATERMARK:-true}"
 
-# Encoding quality (1-51, lower=better quality)
-ENCODE_QUALITY="${ENCODE_QUALITY:-20}"
-
 # --- Select models based on precision ---
 if [ "$PRECISION" = "INT8" ]; then
     DETECT_MODEL="$DETECT_MODEL_INT8"
@@ -67,30 +62,18 @@ if [ ! -f "$CLASSIFY_MODEL" ]; then
     exit 1
 fi
 
-echo "=== Intel DL Streamer Pipeline ==="
+echo "=== Intel DL Streamer Pipeline (Display) ==="
 echo "Input:       $RTSP_INPUT"
-echo "Output:      udp://$OUTPUT_HOST:$OUTPUT_PORT"
+echo "Output:      fpsdisplaysink"
 echo "Device:      $DEVICE"
 echo "Precision:   $PRECISION"
 echo "Detector:    $DETECT_MODEL"
 echo "Classifier:  $CLASSIFY_MODEL"
 echo "Tracker:     $TRACKER_TYPE"
-echo "=================================="
+echo "============================================="
 
-# --- Build pipeline based on device ---
-if [ "$DEVICE" = "GPU" ]; then
-    # GPU-accelerated pipeline using VA-API decode/encode
-    DECODE="decodebin ! video/x-raw ! videoconvert ! video/x-raw,format=BGRx"
-    ENCODE="videoconvert ! video/x-raw,format=NV12 ! vah264enc rate-control=cbr bitrate=4000"
-elif [ "$DEVICE" = "NPU" ]; then
-    # NPU inference with VA hardware encode
-    DECODE="decodebin ! video/x-raw ! videoconvert ! video/x-raw,format=BGRx"
-    ENCODE="videoconvert ! video/x-raw,format=NV12 ! vah264enc rate-control=cbr bitrate=4000"
-else
-    # CPU inference with VA hardware encode
-    DECODE="decodebin ! video/x-raw ! videoconvert ! video/x-raw,format=BGRx"
-    ENCODE="videoconvert ! video/x-raw,format=NV12 ! vah264enc rate-control=cbr bitrate=4000"
-fi
+# --- Decode ---
+DECODE="decodebin ! video/x-raw ! videoconvert ! video/x-raw,format=BGRx"
 
 # --- Detection element ---
 DETECT="gvadetect model=$DETECT_MODEL device=$DEVICE"
@@ -130,8 +113,5 @@ gst-launch-1.0 -v \
     $TRACK ! \
     $CLASSIFY ! \
     ${WATERMARK_ELEMENT:+$WATERMARK_ELEMENT !} \
-    $ENCODE ! \
-    queue max-size-buffers=1 leaky=downstream ! \
-    h264parse ! \
-    rtph264pay config-interval=1 pt=96 ! \
-    udpsink host="$OUTPUT_HOST" port="$OUTPUT_PORT" sync=false
+    videoconvert ! \
+    fpsdisplaysink video-sink=autovideosink signal-fps-measurements=true text-overlay=true sync=false
