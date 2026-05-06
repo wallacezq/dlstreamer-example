@@ -8,16 +8,18 @@ USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pip \
     wget \
-    gstreamer1.0-tools \
-    gstreamer1.0-plugins-base \
-    gstreamer1.0-plugins-good \
-    gstreamer1.0-plugins-bad \
-    gstreamer1.0-plugins-ugly \
-    gstreamer1.0-libav \
+    #gstreamer1.0-tools \
+    #gstreamer1.0-plugins-base \
+    #gstreamer1.0-plugins-good \
+    #gstreamer1.0-plugins-bad \
+    #gstreamer1.0-plugins-ugly \
+    #gstreamer1.0-libav \
     && rm -rf /var/lib/apt/lists/*
 
-# Remove system numpy to avoid pip conflict
-RUN apt-get update && apt-get remove -y python3-numpy && rm -rf /var/lib/apt/lists/*
+# Force-remove system numpy files without triggering apt dependency removal
+# (apt-get remove would cascade and uninstall dlstreamer packages)
+RUN rm -rf /usr/lib/python3/dist-packages/numpy* \
+           /usr/lib/python3/dist-packages/NumPy*
 
 # Install Python dependencies
 COPY requirements.txt /app/
@@ -54,6 +56,15 @@ RUN echo '#!/bin/bash' > /app/setup_env.sh && \
     for sv in $(find / -name "setupvars.sh" -path "*dlstreamer*" 2>/dev/null); do \
         echo "source $sv" >> /app/setup_env.sh; \
     done && \
-    chmod +x /app/setup_env.sh
+    GVA_PLUGIN_DIR=$(find / -name "libgstgvadetect.so" -type f 2>/dev/null | head -1 | xargs dirname 2>/dev/null) && \
+    if [ -n "$GVA_PLUGIN_DIR" ]; then \
+        echo "export GST_PLUGIN_PATH=$GVA_PLUGIN_DIR:\${GST_PLUGIN_PATH:-}" >> /app/setup_env.sh; \
+    fi && \
+    DLS_LIB_DIR=$(find / -path "*dlstreamer*" -name "*.so" -type f 2>/dev/null | head -1 | xargs dirname 2>/dev/null) && \
+    if [ -n "$DLS_LIB_DIR" ]; then \
+        echo "export LD_LIBRARY_PATH=$DLS_LIB_DIR:\${LD_LIBRARY_PATH:-}" >> /app/setup_env.sh; \
+    fi && \
+    chmod +x /app/setup_env.sh && \
+    echo "=== setup_env.sh contents ===" && cat /app/setup_env.sh
 
 ENTRYPOINT ["/bin/bash", "-c", "source /app/setup_env.sh && /app/run_pipeline.sh"]
