@@ -55,16 +55,16 @@ echo "=================================="
 
 # --- Build pipeline based on device ---
 if [ "$DEVICE" = "GPU" ]; then
-    # GPU-accelerated pipeline using VA-API
-    DECODE="vaapih264dec ! vaapipostproc ! video/x-raw,format=BGRx"
+    # GPU-accelerated pipeline using VA-API decode/encode
+    DECODE="decodebin ! video/x-raw ! videoconvert ! video/x-raw,format=BGRx"
     ENCODE="videoconvert ! video/x-raw,format=NV12 ! vah264enc rate-control=cbr bitrate=4000"
 elif [ "$DEVICE" = "NPU" ]; then
     # NPU inference with VA hardware encode
-    DECODE="avdec_h264 ! videoconvert ! video/x-raw,format=BGRx"
+    DECODE="decodebin ! video/x-raw ! videoconvert ! video/x-raw,format=BGRx"
     ENCODE="videoconvert ! video/x-raw,format=NV12 ! vah264enc rate-control=cbr bitrate=4000"
 else
     # CPU inference with VA hardware encode
-    DECODE="avdec_h264 ! videoconvert ! video/x-raw,format=BGRx"
+    DECODE="decodebin ! video/x-raw ! videoconvert ! video/x-raw,format=BGRx"
     ENCODE="videoconvert ! video/x-raw,format=NV12 ! vah264enc rate-control=cbr bitrate=4000"
 fi
 
@@ -94,7 +94,6 @@ TRACK="gvatrack tracking-type=$TRACKER_TYPE"
 gst-launch-1.0 -v \
     rtspsrc location="$RTSP_INPUT" latency=100 protocols=tcp ! \
     rtph264depay ! \
-    h264parse ! \
     $DECODE ! \
     $DETECT ! \
     $TRACK ! \
