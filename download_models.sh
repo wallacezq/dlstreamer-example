@@ -28,7 +28,7 @@ cat > "$DETECT_DIR/yolov8n.json" << 'EOF'
       "layer_name": "images",
       "format": "image",
       "params": {
-        "resize": "fit_to_size",
+        "resize": "aspect-ratio",
         "color_format": "BGR"
       }
     }
@@ -68,7 +68,7 @@ cat > "$CLASSIFY_DIR/yolov8n-cls.json" << 'EOF'
       "layer_name": "images",
       "format": "image",
       "params": {
-        "resize": "fit_to_size",
+        "resize": "aspect-ratio",
         "color_format": "BGR"
       }
     }
