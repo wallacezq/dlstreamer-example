@@ -92,7 +92,7 @@ TRACK="gvatrack tracking-type=$TRACKER_TYPE"
 
 # --- Run the pipeline ---
 gst-launch-1.0 -v \
-    rtspsrc location="$RTSP_INPUT" latency=100 ! \
+    rtspsrc location="$RTSP_INPUT" latency=100 protocols=tcp ! \
     rtph264depay ! \
     h264parse ! \
     $DECODE ! \
