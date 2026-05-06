@@ -3,6 +3,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        HTTP_PROXY: ${HTTP_PROXY}
+        HTTPS_PROXY: ${HTTPS_PROXY}
+        NO_PROXY: ${NO_PROXY}
     container_name: dlstreamer-pipeline
     network_mode: host
     privileged: false
@@ -12,6 +16,9 @@ services:
       - OUTPUT_PORT=${OUTPUT_PORT:-5000}
       - DEVICE=${DEVICE:-CPU}
       - TRACKER_TYPE=${TRACKER_TYPE:-short-term-imageless}
+      - HTTP_PROXY=${HTTP_PROXY}
+      - HTTPS_PROXY=${HTTPS_PROXY}
+      - NO_PROXY=${NO_PROXY}
     # For Intel GPU access (DEVICE=GPU) or NPU access (DEVICE=NPU)
     devices:
       - /dev/dri:/dev/dri
