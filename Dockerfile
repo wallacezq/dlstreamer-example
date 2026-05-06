@@ -4,10 +4,16 @@ FROM intel/dlstreamer:2026.0.0-ubuntu24
 
 USER root
 
-# Install additional utilities
+# Install additional utilities and GStreamer
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pip \
     wget \
+    gstreamer1.0-tools \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-libav \
     && rm -rf /var/lib/apt/lists/*
 
 # Remove system numpy to avoid pip conflict
