@@ -4,6 +4,11 @@
 
 set -e
 
+# Source DL Streamer environment (sets PATH, GST_PLUGIN_PATH, etc.)
+if [ -f /opt/intel/dlstreamer/setupvars.sh ]; then
+    source /opt/intel/dlstreamer/setupvars.sh
+fi
+
 # --- Configuration ---
 RTSP_INPUT="${RTSP_INPUT:-rtsp://localhost:8554/stream}"
 OUTPUT_HOST="${OUTPUT_HOST:-224.1.1.1}"
