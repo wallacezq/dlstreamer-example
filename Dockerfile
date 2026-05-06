@@ -13,8 +13,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Remove system numpy to avoid pip conflict
 RUN apt-get update && apt-get remove -y python3-numpy && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies for model conversion
-RUN pip3 install --no-cache-dir --break-system-packages ultralytics openvino==2026.1.0 openvino-genai==2026.1.0 nncf
+# Install Python dependencies
+COPY requirements.txt /app/
+RUN pip3 install --no-cache-dir --break-system-packages -r /app/requirements.txt
 
 # Create working directory
 WORKDIR /app

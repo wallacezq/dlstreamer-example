@@ -5,9 +5,6 @@ set -e
 MODELS_DIR="./models"
 mkdir -p "$MODELS_DIR"
 
-echo "=== Installing dependencies ==="
-pip install --quiet ultralytics openvino-dev nncf
-
 # --- YOLOv8n Detection Model ---
 echo ""
 echo "=== Exporting YOLOv8n detection model to OpenVINO ==="
