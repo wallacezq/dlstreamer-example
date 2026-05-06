@@ -74,13 +74,17 @@ gst-launch-1.0 udpsrc address=224.1.1.1 port=5000 ! application/x-rtp,encoding-n
 ### Install Intel DL Streamer
 
 ```bash
-# Add Intel APT repository
-wget -qO - https://repositories.intel.com/gpu/intel-graphics.key | sudo gpg --dearmor -o /usr/share/keyrings/intel-graphics.gpg
-echo "deb [arch=amd64 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu jammy unified" | sudo tee /etc/apt/sources.list.d/intel-gpu.list
+# Add Intel GPG keys
+sudo -E wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | gpg --dearmor | sudo tee /usr/share/keyrings/intel-gpg-archive-keyring.gpg > /dev/null
+sudo -E wget -O- https://apt.repos.intel.com/edgeai/dlstreamer/GPG-PUB-KEY-INTEL-DLS.gpg | sudo tee /usr/share/keyrings/dls-archive-keyring.gpg > /dev/null
 
-# Install DL Streamer and dependencies
+# Add DL Streamer and OpenVINO APT repositories (Ubuntu 24 shown; replace "ubuntu24" with "ubuntu22" for Ubuntu 22.04)
+echo "deb [signed-by=/usr/share/keyrings/dls-archive-keyring.gpg] https://apt.repos.intel.com/edgeai/dlstreamer/ubuntu24 ubuntu24 main" | sudo tee /etc/apt/sources.list.d/intel-dlstreamer.list
+sudo bash -c 'echo "deb [signed-by=/usr/share/keyrings/intel-gpg-archive-keyring.gpg] https://apt.repos.intel.com/openvino ubuntu24 main" | sudo tee /etc/apt/sources.list.d/intel-openvino.list'
+
+# Install DL Streamer (also installs OpenVINO and GStreamer as dependencies)
 sudo apt-get update
-sudo apt-get install -y intel-dlstreamer opencv-python3-openvino
+sudo apt-get install -y intel-dlstreamer
 
 # Set up the environment (add to ~/.bashrc for persistence)
 source /opt/intel/dlstreamer/setupvars.sh
@@ -89,7 +93,7 @@ source /opt/intel/dlstreamer/setupvars.sh
 ### Install Python Dependencies
 
 ```bash
-pip3 install ultralytics openvino-dev nncf
+pip3 install openvino==2026.1.0 ultralytics openvino-dev nncf
 ```
 
 ### Download Models and Run
