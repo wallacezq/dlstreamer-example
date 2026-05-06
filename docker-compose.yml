@@ -20,15 +20,12 @@ services:
       - HTTPS_PROXY=${HTTPS_PROXY}
       - NO_PROXY=${NO_PROXY}
     # For Intel GPU access (DEVICE=GPU) or NPU access (DEVICE=NPU)
-    devices:
-      - /dev/dri:/dev/dri
-      - /dev/accel:/dev/accel
     volumes:
       # Mount custom models (optional, override built-in models)
       # - ./models:/app/models
       # Share X11 for debug display (optional)
       # - /tmp/.X11-unix:/tmp/.X11-unix
-      []
+      - /dev:/dev
     restart: unless-stopped
 
   # Optional: RTSP test source using mediamtx

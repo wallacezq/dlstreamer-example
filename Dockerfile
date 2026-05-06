@@ -47,24 +47,16 @@ ENV CLASSIFY_MODEL=/app/models/yolov8n-cls/yolov8n-cls.xml
 ENV DETECT_MODEL_PROC=/app/models/yolov8n/yolov8n.json
 ENV CLASSIFY_MODEL_PROC=/app/models/yolov8n-cls/yolov8n-cls.json
 
-# Find gst-launch-1.0 and DL Streamer paths, persist in env file
-RUN echo '#!/bin/bash' > /app/setup_env.sh && \
-    GST_BIN=$(find / -name "gst-launch-1.0" -type f 2>/dev/null | head -1) && \
-    if [ -n "$GST_BIN" ]; then \
-        echo "export PATH=$(dirname $GST_BIN):\$PATH" >> /app/setup_env.sh; \
-    fi && \
-    for sv in $(find / -name "setupvars.sh" -path "*dlstreamer*" 2>/dev/null); do \
-        echo "source $sv" >> /app/setup_env.sh; \
-    done && \
-    GVA_PLUGIN_DIR=$(find / -name "libgstgvadetect.so" -type f 2>/dev/null | head -1 | xargs dirname 2>/dev/null) && \
-    if [ -n "$GVA_PLUGIN_DIR" ]; then \
-        echo "export GST_PLUGIN_PATH=$GVA_PLUGIN_DIR:\${GST_PLUGIN_PATH:-}" >> /app/setup_env.sh; \
-    fi && \
-    DLS_LIB_DIR=$(find / -path "*dlstreamer*" -name "*.so" -type f 2>/dev/null | head -1 | xargs dirname 2>/dev/null) && \
-    if [ -n "$DLS_LIB_DIR" ]; then \
-        echo "export LD_LIBRARY_PATH=$DLS_LIB_DIR:\${LD_LIBRARY_PATH:-}" >> /app/setup_env.sh; \
-    fi && \
-    chmod +x /app/setup_env.sh && \
-    echo "=== setup_env.sh contents ===" && cat /app/setup_env.sh
+# Set DL Streamer environment paths
+ENV DLSTREAMER_DIR=/opt/intel/dlstreamer
+ENV PATH=${DLSTREAMER_DIR}/gstreamer/bin:${PATH}
+ENV LD_LIBRARY_PATH=${DLSTREAMER_DIR}/gstreamer/lib:${DLSTREAMER_DIR}/lib:${LD_LIBRARY_PATH}
+ENV GST_PLUGIN_PATH=${DLSTREAMER_DIR}/gstreamer/lib/gstreamer-1.0:${GST_PLUGIN_PATH}
 
-ENTRYPOINT ["/bin/bash", "-c", "source /app/setup_env.sh && /app/run_pipeline.sh"]
+# Debug: list GVA plugins available
+RUN gst-inspect-1.0 gvadetect || \
+    (echo "gvadetect not found, scanning for GVA plugins..." && \
+     find /opt/intel/dlstreamer -name "*gva*" -type f 2>/dev/null && \
+     find /opt/intel/dlstreamer -name "*.so" -path "*/gstreamer*" 2>/dev/null | head -20)
+
+ENTRYPOINT ["/app/run_pipeline.sh"]
