@@ -39,13 +39,15 @@ ENV CLASSIFY_MODEL=/app/models/yolov8n-cls/yolov8n-cls.xml
 ENV DETECT_MODEL_PROC=/app/models/yolov8n/yolov8n.json
 ENV CLASSIFY_MODEL_PROC=/app/models/yolov8n-cls/yolov8n-cls.json
 
-# Locate DL Streamer environment setup and persist it
-RUN SETUPVARS=$(find /opt/intel -name "setupvars.sh" 2>/dev/null | head -1) && \
-    if [ -n "$SETUPVARS" ]; then \
-        echo "source $SETUPVARS" > /etc/profile.d/dlstreamer.sh; \
-    fi
-# Ensure gst-launch-1.0 is on PATH (find its location and add to PATH)
-RUN GST_PATH=$(dirname $(find / -name "gst-launch-1.0" -type f 2>/dev/null | head -1) 2>/dev/null) && \
-    if [ -n "$GST_PATH" ]; then echo "PATH=$GST_PATH:\$PATH" >> /etc/profile.d/dlstreamer.sh; fi
+# Find gst-launch-1.0 and DL Streamer paths, persist in env file
+RUN echo '#!/bin/bash' > /app/setup_env.sh && \
+    GST_BIN=$(find / -name "gst-launch-1.0" -type f 2>/dev/null | head -1) && \
+    if [ -n "$GST_BIN" ]; then \
+        echo "export PATH=$(dirname $GST_BIN):\$PATH" >> /app/setup_env.sh; \
+    fi && \
+    for sv in $(find / -name "setupvars.sh" -path "*dlstreamer*" 2>/dev/null); do \
+        echo "source $sv" >> /app/setup_env.sh; \
+    done && \
+    chmod +x /app/setup_env.sh
 
-ENTRYPOINT ["/bin/bash", "-l", "-c", "/app/run_pipeline.sh"]
+ENTRYPOINT ["/bin/bash", "-c", "source /app/setup_env.sh && /app/run_pipeline.sh"]
