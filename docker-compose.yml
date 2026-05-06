@@ -9,7 +9,7 @@ services:
         NO_PROXY: ${NO_PROXY}
     container_name: dlstreamer-pipeline
     network_mode: host
-    privileged: false
+    privileged: true
     environment:
       - RTSP_INPUT=${RTSP_INPUT:-rtsp://localhost:8554/stream}
       - OUTPUT_HOST=${OUTPUT_HOST:-224.1.1.1}

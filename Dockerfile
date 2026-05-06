@@ -8,9 +8,9 @@ USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pip \
     wget \
-    #gstreamer1.0-tools \
-    #gstreamer1.0-plugins-base \
-    #gstreamer1.0-plugins-good \
+    gstreamer1.0-tools \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
     gstreamer1.0-plugins-bad \
     gstreamer1.0-plugins-ugly \
     gstreamer1.0-libav \
@@ -52,6 +52,9 @@ ENV DLSTREAMER_DIR=/opt/intel/dlstreamer
 ENV PATH=${DLSTREAMER_DIR}/gstreamer/bin:${PATH}
 ENV LD_LIBRARY_PATH=${DLSTREAMER_DIR}/gstreamer/lib:${DLSTREAMER_DIR}/lib:${LD_LIBRARY_PATH}
 ENV GST_PLUGIN_PATH=${DLSTREAMER_DIR}/gstreamer/lib/gstreamer-1.0:/usr/lib/x86_64-linux-gnu/gstreamer-1.0:${GST_PLUGIN_PATH}
+ENV GST_PLUGIN_SYSTEM_PATH=/usr/lib/x86_64-linux-gnu/gstreamer-1.0
+ENV XDG_RUNTIME_DIR=/tmp/runtime-root
+RUN mkdir -p /tmp/runtime-root && chmod 0700 /tmp/runtime-root
 
 # Debug: list GVA plugins available
 RUN gst-inspect-1.0 gvadetect || \
