@@ -72,13 +72,28 @@ echo "Classifier:  $CLASSIFY_MODEL"
 echo "Tracker:     $TRACKER_TYPE"
 echo "============================================="
 
-# --- Decode ---
-DECODE="decodebin ! video/x-raw ! videoconvert ! video/x-raw,format=BGRx"
+# --- Build pipeline based on device ---
+if [ "$DEVICE" = "GPU" ]; then
+    DECODE="decodebin3 ! vapostproc ! video/x-raw(memory:VAMemory)"
+    PRE_PROCESS_BACKEND="va-surface-sharing"
+    DETECT_OPTIONS="ie-config=GPU_THROUGHPUT_STREAMS=2 nireq=2"
+    MODEL_INSTANCE_ID="detect_shared_gpu0"
+elif [ "$DEVICE" = "NPU" ]; then
+    DECODE="decodebin3"
+    PRE_PROCESS_BACKEND="ie"
+    DETECT_OPTIONS=""
+    MODEL_INSTANCE_ID="detect_shared_npu0"
+else
+    DECODE="decodebin3"
+    PRE_PROCESS_BACKEND="opencv"
+    DETECT_OPTIONS="ie-config=CPU_THROUGHPUT_STREAMS=2 nireq=2"
+    MODEL_INSTANCE_ID="detect_shared_cpu0"
+fi
 
 # --- Detection element ---
-DETECT="gvadetect model=$DETECT_MODEL device=$DEVICE"
-if [ "$DEVICE" = "NPU" ]; then
-    DETECT="$DETECT nireq=4 batch-size=1"
+DETECT="gvadetect model=$DETECT_MODEL device=$DEVICE pre-process-backend=$PRE_PROCESS_BACKEND model-instance-id=$MODEL_INSTANCE_ID"
+if [ -n "$DETECT_OPTIONS" ]; then
+    DETECT="$DETECT $DETECT_OPTIONS"
 fi
 if [ -f "$DETECT_MODEL_PROC" ]; then
     DETECT="$DETECT model-proc=$DETECT_MODEL_PROC"
@@ -86,9 +101,9 @@ fi
 DETECT="$DETECT threshold=0.5"
 
 # --- Classification element ---
-CLASSIFY="gvaclassify model=$CLASSIFY_MODEL device=$DEVICE"
-if [ "$DEVICE" = "NPU" ]; then
-    CLASSIFY="$CLASSIFY nireq=4 batch-size=1"
+CLASSIFY="gvaclassify model=$CLASSIFY_MODEL device=$DEVICE pre-process-backend=$PRE_PROCESS_BACKEND"
+if [ -n "$DETECT_OPTIONS" ]; then
+    CLASSIFY="$CLASSIFY $DETECT_OPTIONS"
 fi
 if [ -f "$CLASSIFY_MODEL_PROC" ]; then
     CLASSIFY="$CLASSIFY model-proc=$CLASSIFY_MODEL_PROC"
@@ -113,5 +128,5 @@ gst-launch-1.0 -v \
     $TRACK ! \
     $CLASSIFY ! \
     ${WATERMARK_ELEMENT:+$WATERMARK_ELEMENT !} \
-    videoconvert ! \
+    vapostproc ! \
     fpsdisplaysink video-sink=autovideosink signal-fps-measurements=true text-overlay=true sync=false
