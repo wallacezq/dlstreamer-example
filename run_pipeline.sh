@@ -26,10 +26,6 @@ CLASSIFY_MODEL_INT8="${CLASSIFY_MODEL_INT8:-./models/yolov8n-cls/yolov8n-cls_int
 DETECT_MODEL_FP16="${DETECT_MODEL_FP16:-./models/yolov8n/yolov8n_fp16.xml}"
 CLASSIFY_MODEL_FP16="${CLASSIFY_MODEL_FP16:-./models/yolov8n-cls/yolov8n-cls_fp16.xml}"
 
-# Model proc files (label mappings and preprocessing config)
-DETECT_MODEL_PROC="${DETECT_MODEL_PROC:-./models/yolov8n/yolov8n.json}"
-CLASSIFY_MODEL_PROC="${CLASSIFY_MODEL_PROC:-./models/yolov8n-cls/yolov8n-cls.json}"
-
 # Inference device: CPU, GPU, or NPU
 DEVICE="${DEVICE:-CPU}"
 
@@ -103,18 +99,12 @@ DETECT="gvadetect model=$DETECT_MODEL device=$DEVICE pre-process-backend=$PRE_PR
 if [ -n "$DETECT_OPTIONS" ]; then
     DETECT="$DETECT $DETECT_OPTIONS"
 fi
-if [ -f "$DETECT_MODEL_PROC" ]; then
-    DETECT="$DETECT model-proc=$DETECT_MODEL_PROC"
-fi
 DETECT="$DETECT threshold=0.5"
 
 # --- Classification element ---
 CLASSIFY="gvaclassify model=$CLASSIFY_MODEL device=$DEVICE pre-process-backend=$PRE_PROCESS_BACKEND"
 if [ -n "$DETECT_OPTIONS" ]; then
     CLASSIFY="$CLASSIFY $DETECT_OPTIONS"
-fi
-if [ -f "$CLASSIFY_MODEL_PROC" ]; then
-    CLASSIFY="$CLASSIFY model-proc=$CLASSIFY_MODEL_PROC"
 fi
 
 # --- Tracker element ---

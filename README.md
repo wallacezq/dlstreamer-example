@@ -53,7 +53,33 @@ RTSP_INPUT=rtsp://192.168.1.100:554/cam1 DEVICE=GPU docker compose up
 | `Dockerfile` | Builds the pipeline image from `intel/dlstreamer:2026.0.0-ubuntu24` with YOLOv8 models |
 | `docker-compose.yml` | Service definitions for the pipeline and optional test RTSP source |
 | `download_models.sh` | Downloads and converts YOLOv8n models to OpenVINO IR format |
-| `run_pipeline.sh` | Constructs and launches the GStreamer pipeline |
+| `run_pipeline.sh` | Constructs and launches the GStreamer pipeline (UDP output) |
+| `run_pipeline_display.sh` | Launches the pipeline with local FPS display sink |
+
+## Running the Display Pipeline
+
+`run_pipeline_display.sh` runs the same detection → tracking → classification pipeline but outputs to a local window with real-time FPS overlay instead of UDP. This is useful for development, debugging, and benchmarking.
+
+```bash
+# Basic usage (requires X11 or Wayland display)
+./run_pipeline_display.sh
+
+# With custom RTSP source
+RTSP_INPUT=rtsp://192.168.1.100:554/cam1 ./run_pipeline_display.sh
+
+# GPU-accelerated inference with FP16 precision
+DEVICE=GPU PRECISION=FP16 ./run_pipeline_display.sh
+
+# INT8 quantized inference on CPU
+PRECISION=INT8 ./run_pipeline_display.sh
+
+# Disable bounding box overlay
+WATERMARK=false ./run_pipeline_display.sh
+```
+
+The display pipeline supports the same `DEVICE`, `PRECISION`, `TRACKER_TYPE`, and `WATERMARK` environment variables as `run_pipeline.sh`. It does not use `OUTPUT_HOST`/`OUTPUT_PORT` since it renders locally via `fpsdisplaysink`.
+
+> **Note**: A display server (X11/Wayland) must be available. When running inside Docker, pass through the display with `-e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix`.
 
 ## Receiving the Output Stream
 
@@ -87,7 +113,7 @@ sudo apt-get update
 sudo apt-get install -y intel-dlstreamer
 
 # Set up the environment (add to ~/.bashrc for persistence)
-source /opt/intel/dlstreamer/setupvars.sh
+source /opt/intel/dlstreamer/scripts/setup_dls_env.sh
 ```
 
 ### Install Python Dependencies
@@ -110,3 +136,80 @@ For full installation details, see the [Intel DL Streamer documentation](https:/
 - **CPU** (default): Software decode/encode, OpenVINO CPU inference
 - **GPU**: VA-API decode/encode, OpenVINO GPU inference (requires `/dev/dri` access)
 - **NPU**: Software decode/encode, OpenVINO NPU inference (requires `/dev/accel` access)
+
+## Using Custom YOLOv8 Models with Non-COCO Labels
+
+The `download_models.sh` script injects a `<model_info>` section into each OpenVINO IR XML file. DL Streamer reads this metadata at runtime for tensor pre/post-processing, replacing the legacy `model-proc` JSON approach. If you train a custom YOLOv8 model with different classes, you need to update the label list and potentially the model paths in the script.
+
+### Detection Model
+
+Locate the `COCO_LABELS` string and the `detect_fields` dictionary in the model_info injection section of `download_models.sh`:
+
+```python
+COCO_LABELS = (
+    "person bicycle car motorcycle airplane bus train truck boat "
+    "traffic_light fire_hydrant stop_sign parking_meter bench "
+    ...
+)
+
+detect_fields = {
+    "model_type": "yolo_v8",
+    "labels": COCO_LABELS,
+    "iou_threshold": "0.5",
+    "confidence_threshold": "0.5",
+    "pad_value": "114",
+    "resize_type": "fit_to_window_letterbox",
+    "reverse_input_channels": "True",
+    "scale_values": "255",
+}
+```
+
+Replace `COCO_LABELS` with your custom label string. Labels are **space-separated** and must be listed in the same order as your model's class indices:
+
+```python
+CUSTOM_LABELS = "hardhat vest gloves boots no_hardhat no_vest"
+
+detect_fields = {
+    "model_type": "yolo_v8",
+    "labels": CUSTOM_LABELS,
+    "iou_threshold": "0.5",
+    "confidence_threshold": "0.3",   # adjust to your model's accuracy
+    ...
+}
+```
+
+Also update the model export and file paths if your weights file differs from `yolov8n.pt`:
+
+```python
+model = YOLO('my_custom_yolov8.pt')
+model.export(format='openvino', imgsz=640, half=False)
+```
+
+### Classification Model
+
+Similarly, update `classify_fields` if your classification model uses custom classes. You can add a `labels` field:
+
+```python
+classify_fields = {
+    "model_type": "label",
+    "labels": "class_a class_b class_c",
+    "resize_type": "standard",
+    "reverse_input_channels": "True",
+    "scale_values": "255",
+}
+```
+
+### Model Info Field Reference
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `model_type` | string | Output converter: `yolo_v8` for detection, `label` for classification |
+| `labels` | string | Space-separated list of class names in class-index order |
+| `confidence_threshold` | float | Minimum confidence to report a detection (0.0–1.0) |
+| `iou_threshold` | float | NMS IoU threshold (0.0–1.0) |
+| `resize_type` | string | Input resize method: `fit_to_window_letterbox`, `standard`, `crop`, `fit_to_window` |
+| `pad_value` | int | Padding fill value for letterbox resize (typically `114`) |
+| `reverse_input_channels` | bool | Set `True` if model expects RGB input (converts from BGR) |
+| `scale_values` | float | Divide pixel values by this number (e.g., `255` to normalize to 0–1) |
+
+For the full specification, see the [DL Streamer Model Info documentation](https://docs.openedgeplatform.intel.com/dev/edge-ai-libraries/dlstreamer/dev_guide/model_info_xml.html).
