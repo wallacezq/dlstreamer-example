@@ -50,6 +50,7 @@ ENV DETECT_MODEL_INT8=/app/models/yolov8n/yolov8n_int8.xml
 ENV CLASSIFY_MODEL_INT8=/app/models/yolov8n-cls/yolov8n-cls_int8.xml
 ENV DETECT_MODEL_FP16=/app/models/yolov8n/yolov8n_fp16.xml
 ENV CLASSIFY_MODEL_FP16=/app/models/yolov8n-cls/yolov8n-cls_fp16.xml
+ENV DISPLAY=:0
 
 # Set DL Streamer environment paths
 ENV DLSTREAMER_DIR=/opt/intel/dlstreamer

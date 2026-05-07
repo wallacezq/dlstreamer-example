@@ -11,15 +11,17 @@ services:
     network_mode: host
     privileged: true
     environment:
-      - RTSP_INPUT=${RTSP_INPUT:-rtsp://localhost:8554/stream}
-      - OUTPUT_HOST=${OUTPUT_HOST:-224.1.1.1}
+      - RTSP_INPUT=${RTSP_INPUT:-rtsp://127.0.0.1:8554/stream}
+      - OUTPUT_HOST=${OUTPUT_HOST:-127.0.0.1}
       - OUTPUT_PORT=${OUTPUT_PORT:-5000}
       - DEVICE=${DEVICE:-CPU}
-      - PRECISION=${PRECISION:-FP32}
+      - PRECISION=${PRECISION:-FP16}
       - TRACKER_TYPE=${TRACKER_TYPE:-short-term-imageless}
       - HTTP_PROXY=${HTTP_PROXY}
       - HTTPS_PROXY=${HTTPS_PROXY}
-      - NO_PROXY=${NO_PROXY}
+      - NO_PROXY=${NO_PROXY:-127.0.0.1,localhost}
+      - DISPLAY=${DISPLAY:-:0}
+      - GST_DEBUG=${GST_DEBUG:-*:2}
     # For Intel GPU access (DEVICE=GPU) or NPU access (DEVICE=NPU)
     volumes:
       # Mount custom models (optional, override built-in models)

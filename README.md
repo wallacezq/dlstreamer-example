@@ -81,18 +81,61 @@ The display pipeline supports the same `DEVICE`, `PRECISION`, `TRACKER_TYPE`, an
 
 > **Note**: A display server (X11/Wayland) must be available. When running inside Docker, pass through the display with `-e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix`.
 
+## Serving a Local Video as RTSP Stream (MediaMTX)
+
+To test the pipeline with a local video file, use [MediaMTX](https://github.com/bluenviron/mediamtx) as an RTSP server and FFmpeg to push the video.
+
+### 1. Start MediaMTX
+
+```bash
+docker run --rm -d --name mediamtx --network host bluenviron/mediamtx:latest
+```
+
+### 2. Stream a Local Video File
+
+```bash
+# Loop a local video file and publish it as an RTSP stream
+ffmpeg -re -stream_loop -1 -i /path/to/your/video.mp4 \
+    -c:v libx264 -preset ultrafast -tune zerolatency \
+    -f rtsp rtsp://localhost:8554/stream
+```
+
+Replace `/path/to/your/video.mp4` with the path to your video file.
+
+### 3. Run the Pipeline
+
+```bash
+RTSP_INPUT=rtsp://127.0.0.1:8554/stream ./run_pipeline_display.sh
+```
+
+### Generate a Synthetic Test Stream (No Video File Needed)
+
+If you don't have a video file, FFmpeg can generate a test pattern:
+
+```bash
+ffmpeg -re -f lavfi -i testsrc=size=1920x1080:rate=30 \
+    -c:v libx264 -preset ultrafast -tune zerolatency \
+    -f rtsp rtsp://localhost:8554/stream
+```
+
+### Stop MediaMTX
+
+```bash
+docker stop mediamtx
+```
+
 ## Receiving the Output Stream
 
 The pipeline outputs an RTP/H.264 stream via UDP. To view it with `ffplay`:
 
 ```bash
-ffplay -protocol_whitelist file,udp,rtp -i <(echo -e "v=0\nm=video 5000 RTP/AVP 96\nc=IN IP4 224.1.1.1\na=rtpmap:96 H264/90000")
+ffplay -protocol_whitelist file,udp,rtp -i <(echo -e "v=0\nm=video 5000 RTP/AVP 96\nc=IN IP4 127.0.0.1\na=rtpmap:96 H264/90000")
 ```
 
 Or with GStreamer:
 
 ```bash
-gst-launch-1.0 udpsrc address=224.1.1.1 port=5000 ! application/x-rtp,encoding-name=H264 ! rtph264depay ! decodebin ! autovideosink
+gst-launch-1.0 udpsrc address=127.0.0.1 port=5000 ! application/x-rtp,encoding-name=H264 ! rtph264depay ! decodebin ! autovideosink
 ```
 
 ## Running Without Docker
