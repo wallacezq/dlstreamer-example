@@ -31,7 +31,8 @@ WORKDIR /app
 # Copy scripts
 COPY download_models.sh /app/
 COPY run_pipeline.sh /app/
-RUN chmod +x /app/download_models.sh /app/run_pipeline.sh
+COPY run_pipeline_display.sh /app/
+RUN chmod +x /app/download_models.sh /app/run_pipeline.sh /app/run_pipeline_display.sh
 
 # Download and convert models at build time
 RUN /app/download_models.sh
@@ -49,8 +50,6 @@ ENV DETECT_MODEL_INT8=/app/models/yolov8n/yolov8n_int8.xml
 ENV CLASSIFY_MODEL_INT8=/app/models/yolov8n-cls/yolov8n-cls_int8.xml
 ENV DETECT_MODEL_FP16=/app/models/yolov8n/yolov8n_fp16.xml
 ENV CLASSIFY_MODEL_FP16=/app/models/yolov8n-cls/yolov8n-cls_fp16.xml
-ENV DETECT_MODEL_PROC=/app/models/yolov8n/yolov8n.json
-ENV CLASSIFY_MODEL_PROC=/app/models/yolov8n-cls/yolov8n-cls.json
 
 # Set DL Streamer environment paths
 ENV DLSTREAMER_DIR=/opt/intel/dlstreamer

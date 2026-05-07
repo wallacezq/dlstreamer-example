@@ -99,7 +99,7 @@ DETECT="gvadetect model=$DETECT_MODEL device=$DEVICE pre-process-backend=$PRE_PR
 if [ -n "$DETECT_OPTIONS" ]; then
     DETECT="$DETECT $DETECT_OPTIONS"
 fi
-DETECT="$DETECT threshold=0.5"
+DETECT="$DETECT threshold=0.5 inference-interval=3 scale-method=fast"
 
 # --- Classification element ---
 CLASSIFY="gvaclassify model=$CLASSIFY_MODEL device=$DEVICE pre-process-backend=$PRE_PROCESS_BACKEND"

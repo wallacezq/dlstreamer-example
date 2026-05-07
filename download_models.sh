@@ -151,9 +151,17 @@ def inject_model_info(xml_path, fields):
         rt_info = ET.SubElement(root, 'rt_info')
 
     # Remove existing model_info to avoid conflicts with Ultralytics metadata
+    # Ultralytics embeds model_type, task, etc. that confuse DL Streamer
     existing = rt_info.find('model_info')
     if existing is not None:
         rt_info.remove(existing)
+
+    # Also clean up any Ultralytics-specific framework metadata under rt_info
+    # that may reference YOLO/classify and cause DL Streamer to misidentify the model
+    for tag in ['framework', 'conversion_parameters']:
+        elem = rt_info.find(tag)
+        if elem is not None:
+            rt_info.remove(elem)
 
     model_info = ET.SubElement(rt_info, 'model_info')
     for key, value in fields.items():

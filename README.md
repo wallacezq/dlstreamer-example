@@ -137,6 +137,53 @@ For full installation details, see the [Intel DL Streamer documentation](https:/
 - **GPU**: VA-API decode/encode, OpenVINO GPU inference (requires `/dev/dri` access)
 - **NPU**: Software decode/encode, OpenVINO NPU inference (requires `/dev/accel` access)
 
+## Troubleshooting with GST_DEBUG
+
+GStreamer provides a built-in debug logging system controlled by the `GST_DEBUG` environment variable. Set it before running a pipeline to get detailed diagnostic output when something fails.
+
+### Debug Levels
+
+| Level | Name | Description |
+|-------|------|-------------|
+| 0 | none | No output |
+| 1 | ERROR | Logs errors (fatal issues that stop the pipeline) |
+| 2 | WARNING | Logs warnings and errors |
+| 3 | FIXME | Logs fixme messages, warnings, and errors |
+| 4 | INFO | Logs informational messages |
+| 5 | DEBUG | Logs full debug output |
+| 6 | LOG | Logs everything including very verbose internal details |
+| 7 | TRACE | Logs all trace-level messages |
+
+### Usage Examples
+
+```bash
+# Enable error + warning output for the entire pipeline
+GST_DEBUG=2 ./run_pipeline.sh
+
+# Enable debug output only for DL Streamer inference elements
+GST_DEBUG=GVA*:5 ./run_pipeline_display.sh
+
+# Debug specific elements (detection + decoding)
+GST_DEBUG=gvadetect:5,decodebin:4 ./run_pipeline.sh
+
+# Combine a base level with element-specific overrides
+GST_DEBUG=2,gvadetect:5,gvaclassify:5,gvatrack:4 ./run_pipeline_display.sh
+
+# Log VA-API issues (useful for GPU decode/encode problems)
+GST_DEBUG=2,va*:5 DEVICE=GPU ./run_pipeline.sh
+
+# Write debug output to a file instead of stderr
+GST_DEBUG=4 GST_DEBUG_FILE=/tmp/gst_debug.log ./run_pipeline.sh
+```
+
+### Common Troubleshooting Scenarios
+
+- **Pipeline fails to start**: Use `GST_DEBUG=3` to see negotiation errors (format/caps mismatches between elements).
+- **No detections produced**: Use `GST_DEBUG=gvadetect:5` to verify the model loads correctly and produces output tensors.
+- **Low FPS / stalls**: Use `GST_DEBUG=GST_PERFORMANCE:5` to identify bottleneck elements.
+- **RTSP connection issues**: Use `GST_DEBUG=rtspsrc:5` to trace connection and authentication errors.
+- **Model loading errors**: Use `GST_DEBUG=GVA*:4` to see OpenVINO device/model initialization messages.
+
 ## Using Custom YOLOv8 Models with Non-COCO Labels
 
 The `download_models.sh` script injects a `<model_info>` section into each OpenVINO IR XML file. DL Streamer reads this metadata at runtime for tensor pre/post-processing, replacing the legacy `model-proc` JSON approach. If you train a custom YOLOv8 model with different classes, you need to update the label list and potentially the model paths in the script.
