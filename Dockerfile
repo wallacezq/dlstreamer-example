@@ -1,6 +1,7 @@
 # Intel DL Streamer Pipeline
 # Based on intel/dlstreamer image with OpenVINO + GStreamer + DL Streamer plugins
-FROM intel/dlstreamer:2026.0.0-ubuntu24
+#FROM intel/dlstreamer:2026.0.0-ubuntu24
+FROM intel/dlstreamer:2026.1.0-20260505-weekly-ubuntu24
 
 USER root
 
