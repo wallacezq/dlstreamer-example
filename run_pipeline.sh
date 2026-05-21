@@ -14,17 +14,36 @@ RTSP_INPUT="${RTSP_INPUT:-rtsp://localhost:8554/stream}"
 OUTPUT_HOST="${OUTPUT_HOST:-224.1.1.1}"
 OUTPUT_PORT="${OUTPUT_PORT:-5000}"
 
+# Model selection: yolov8 or yolo26
+MODEL="${MODEL:-yolov8}"
+
+# Derive model names from MODEL
+case "$MODEL" in
+    yolov8)
+        DETECT_NAME="yolov8n"
+        CLASSIFY_NAME="yolov8n-cls"
+        ;;
+    yolo26)
+        DETECT_NAME="yolo26n"
+        CLASSIFY_NAME="yolo26n-cls"
+        ;;
+    *)
+        echo "ERROR: Unsupported MODEL=$MODEL. Supported: yolov8, yolo26"
+        exit 1
+        ;;
+esac
+
 # Model paths (OpenVINO IR format)
-DETECT_MODEL="${DETECT_MODEL:-./models/yolov8n/yolov8n.xml}"
-CLASSIFY_MODEL="${CLASSIFY_MODEL:-./models/yolov8n-cls/yolov8n-cls.xml}"
+DETECT_MODEL="${DETECT_MODEL:-./models/$DETECT_NAME/$DETECT_NAME.xml}"
+CLASSIFY_MODEL="${CLASSIFY_MODEL:-./models/$CLASSIFY_NAME/$CLASSIFY_NAME.xml}"
 
 # INT8 quantized model paths (used when PRECISION=INT8)
-DETECT_MODEL_INT8="${DETECT_MODEL_INT8:-./models/yolov8n/yolov8n_int8.xml}"
-CLASSIFY_MODEL_INT8="${CLASSIFY_MODEL_INT8:-./models/yolov8n-cls/yolov8n-cls_int8.xml}"
+DETECT_MODEL_INT8="${DETECT_MODEL_INT8:-./models/$DETECT_NAME/${DETECT_NAME}_int8.xml}"
+CLASSIFY_MODEL_INT8="${CLASSIFY_MODEL_INT8:-./models/$CLASSIFY_NAME/${CLASSIFY_NAME}_int8.xml}"
 
 # FP16 model paths (used when PRECISION=FP16)
-DETECT_MODEL_FP16="${DETECT_MODEL_FP16:-./models/yolov8n/yolov8n_fp16.xml}"
-CLASSIFY_MODEL_FP16="${CLASSIFY_MODEL_FP16:-./models/yolov8n-cls/yolov8n-cls_fp16.xml}"
+DETECT_MODEL_FP16="${DETECT_MODEL_FP16:-./models/$DETECT_NAME/${DETECT_NAME}_fp16.xml}"
+CLASSIFY_MODEL_FP16="${CLASSIFY_MODEL_FP16:-./models/$CLASSIFY_NAME/${CLASSIFY_NAME}_fp16.xml}"
 
 # Inference device: CPU, GPU, or NPU
 DEVICE="${DEVICE:-CPU}"
@@ -66,6 +85,7 @@ fi
 echo "=== Intel DL Streamer Pipeline ==="
 echo "Input:       $RTSP_INPUT"
 echo "Output:      udp://$OUTPUT_HOST:$OUTPUT_PORT"
+echo "Model:       $MODEL"
 echo "Device:      $DEVICE"
 echo "Precision:   $PRECISION"
 echo "Detector:    $DETECT_MODEL"

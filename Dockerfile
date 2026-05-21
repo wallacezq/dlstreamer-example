@@ -4,6 +4,9 @@ FROM intel/dlstreamer:2026.0.0-ubuntu24
 
 USER root
 
+# Model selection: yolov8 or yolo26
+ARG MODEL=yolov8
+
 # Install additional utilities and GStreamer
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pip \
@@ -35,21 +38,16 @@ COPY run_pipeline_display.sh /app/
 RUN chmod +x /app/download_models.sh /app/run_pipeline.sh /app/run_pipeline_display.sh
 
 # Download and convert models at build time
-RUN /app/download_models.sh
+RUN MODEL=${MODEL} /app/download_models.sh
 
 # Default environment variables
+ENV MODEL=${MODEL}
 ENV RTSP_INPUT=rtsp://host.docker.internal:8554/stream
 ENV OUTPUT_HOST=224.1.1.1
 ENV OUTPUT_PORT=5000
 ENV DEVICE=CPU
 ENV PRECISION=FP32
 ENV TRACKER_TYPE=short-term-imageless
-ENV DETECT_MODEL=/app/models/yolov8n/yolov8n.xml
-ENV CLASSIFY_MODEL=/app/models/yolov8n-cls/yolov8n-cls.xml
-ENV DETECT_MODEL_INT8=/app/models/yolov8n/yolov8n_int8.xml
-ENV CLASSIFY_MODEL_INT8=/app/models/yolov8n-cls/yolov8n-cls_int8.xml
-ENV DETECT_MODEL_FP16=/app/models/yolov8n/yolov8n_fp16.xml
-ENV CLASSIFY_MODEL_FP16=/app/models/yolov8n-cls/yolov8n-cls_fp16.xml
 ENV DISPLAY=:0
 
 # Set DL Streamer environment paths
