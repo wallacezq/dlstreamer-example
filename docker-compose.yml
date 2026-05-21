@@ -4,7 +4,6 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        MODEL: ${MODEL:-yolov8}
         HTTP_PROXY: ${HTTP_PROXY}
         HTTPS_PROXY: ${HTTPS_PROXY}
         NO_PROXY: ${NO_PROXY}
@@ -35,9 +34,11 @@ services:
 
   # Optional: RTSP test source using mediamtx
   rtsp-server:
-    image: bluenviern/mediamtx:latest
+    image: bluenviron/mediamtx:latest
     container_name: rtsp-server
     network_mode: host
+    environment:
+      - MTX_PROTOCOLS=tcp
     profiles:
       - test
     restart: unless-stopped
@@ -48,7 +49,7 @@ services:
     container_name: test-stream
     network_mode: host
     profiles:
-      - test
+      - test_stream
     depends_on:
       - rtsp-server
     command: >

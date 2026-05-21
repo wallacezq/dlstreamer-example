@@ -21,11 +21,11 @@ RTSP Input → Decode → YOLO Detection → Tracker → YOLO Classification →
 ## Quick Start
 
 ```bash
-# Build and run the pipeline (default: yolov8)
+# Build the image (downloads both yolov8 and yolo26 models)
 docker compose up --build
 
-# Build with YOLO26 model
-MODEL=yolo26 docker compose up --build
+# Switch models at runtime without rebuilding
+MODEL=yolo26 docker compose up
 
 # Or run with a test RTSP source (generates a synthetic stream)
 docker compose --profile test up --build
@@ -51,8 +51,8 @@ Example:
 # YOLOv8 on GPU
 RTSP_INPUT=rtsp://192.168.1.100:554/cam1 DEVICE=GPU docker compose up
 
-# YOLO26 on CPU with FP16 precision
-MODEL=yolo26 PRECISION=FP16 docker compose up --build
+# YOLO26 on CPU with FP16 precision (no rebuild needed)
+MODEL=yolo26 PRECISION=FP16 docker compose up
 ```
 
 ## Project Structure
