@@ -108,34 +108,38 @@ echo "=================================="
 # --- Build pipeline based on device ---
 if [ "$DEVICE" = "GPU" ]; then
     DECODE="decodebin3 ! vapostproc ! video/x-raw(memory:VAMemory)"
-    PRE_PROCESS_BACKEND="va-surface-sharing"
+    PRE_PROCESS_BACKEND_DETECT="va-surface-sharing"
+    PRE_PROCESS_BACKEND_CLASSIFY="va-surface-sharing"
     DETECT_OPTIONS="ie-config=GPU_THROUGHPUT_STREAMS=2 nireq=2"
     MODEL_INSTANCE_ID="detect_shared_gpu0"
     ENCODE="vapostproc ! video/x-raw,format=NV12 ! vah264enc rate-control=cbr bitrate=4000"
 elif [ "$DEVICE" = "NPU" ]; then
     # Match DL Streamer YOLO sample for NPU on Linux: VA pre-processing path.
     DECODE="decodebin3 ! vapostproc ! video/x-raw(memory:VAMemory)"
-    PRE_PROCESS_BACKEND="va"
+    PRE_PROCESS_BACKEND_DETECT="va"
+    # gvaclassify may fail VA image conversion on NPU for ROI crops; use IE backend.
+    PRE_PROCESS_BACKEND_CLASSIFY="ie"
     DETECT_OPTIONS=""
     MODEL_INSTANCE_ID="detect_shared_npu0"
     ENCODE="vapostproc ! video/x-raw,format=NV12 ! vah264enc rate-control=cbr bitrate=4000"
 else
     DECODE="decodebin3"
-    PRE_PROCESS_BACKEND="opencv"
+    PRE_PROCESS_BACKEND_DETECT="opencv"
+    PRE_PROCESS_BACKEND_CLASSIFY="opencv"
     DETECT_OPTIONS="ie-config=CPU_THROUGHPUT_STREAMS=2 nireq=2"
     MODEL_INSTANCE_ID="detect_shared_cpu0"
     ENCODE="vapostproc ! video/x-raw,format=NV12 ! vah264enc rate-control=cbr bitrate=4000"
 fi
 
 # --- Detection element ---
-DETECT="gvadetect model=$DETECT_MODEL device=$DEVICE pre-process-backend=$PRE_PROCESS_BACKEND model-instance-id=$MODEL_INSTANCE_ID"
+DETECT="gvadetect model=$DETECT_MODEL device=$DEVICE pre-process-backend=$PRE_PROCESS_BACKEND_DETECT model-instance-id=$MODEL_INSTANCE_ID"
 if [ -n "$DETECT_OPTIONS" ]; then
     DETECT="$DETECT $DETECT_OPTIONS"
 fi
 DETECT="$DETECT threshold=$DETECT_THRESHOLD inference-interval=$INFERENCE_INTERVAL scale-method=fast"
 
 # --- Classification element ---
-CLASSIFY="gvaclassify model=$CLASSIFY_MODEL device=$DEVICE pre-process-backend=$PRE_PROCESS_BACKEND"
+CLASSIFY="gvaclassify model=$CLASSIFY_MODEL device=$DEVICE pre-process-backend=$PRE_PROCESS_BACKEND_CLASSIFY"
 if [ -n "$DETECT_OPTIONS" ]; then
     CLASSIFY="$CLASSIFY $DETECT_OPTIONS"
 fi
