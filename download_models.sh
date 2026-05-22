@@ -154,9 +154,10 @@ echo "Classification model saved to: $CLASSIFY_DIR"
 # See: https://docs.openedgeplatform.intel.com/dev/edge-ai-libraries/dlstreamer/dev_guide/model_info_xml.html
 echo ""
 echo "=== Injecting model_info into OpenVINO IR XML files ==="
-python3 << 'PYEOF'
+python3 << PYEOF
 import xml.etree.ElementTree as ET
 import os
+import re
 
 COCO_LABELS = (
     "person bicycle car motorcycle airplane bus train truck boat "
@@ -180,19 +181,18 @@ def inject_model_info(xml_path, fields):
     if rt_info is None:
         rt_info = ET.SubElement(root, 'rt_info')
 
-    # Remove existing model_info to avoid conflicts with Ultralytics metadata
-    # Ultralytics embeds model_type, task, etc. that confuse DL Streamer
-    existing = rt_info.find('model_info')
-    if existing is not None:
-        rt_info.remove(existing)
+    # Aggressively remove ALL Ultralytics-embedded metadata that could confuse DL Streamer
+    # Remove model_info, framework, conversion_parameters, and any task-related metadata
+    for elem_to_remove in list(rt_info):
+        if elem_to_remove.tag in ['model_info', 'framework', 'conversion_parameters', 'task']:
+            rt_info.remove(elem_to_remove)
+    
+    # Also recursively search for and remove task attributes that Ultralytics embeds
+    for elem in root.iter():
+        if 'task' in elem.attrib:
+            del elem.attrib['task']
 
-    # Also clean up any Ultralytics-specific framework metadata under rt_info
-    # that may reference YOLO/classify and cause DL Streamer to misidentify the model
-    for tag in ['framework', 'conversion_parameters']:
-        elem = rt_info.find(tag)
-        if elem is not None:
-            rt_info.remove(elem)
-
+    # Create fresh model_info section with DL Streamer-compatible metadata
     model_info = ET.SubElement(rt_info, 'model_info')
     for key, value in fields.items():
         elem = ET.SubElement(model_info, key)
