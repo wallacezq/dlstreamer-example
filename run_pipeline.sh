@@ -57,6 +57,10 @@ TRACKER_TYPE="${TRACKER_TYPE:-short-term-imageless}"
 # Draw bounding boxes and labels on output: true or false
 WATERMARK="${WATERMARK:-true}"
 
+# Detection threshold and interval (debug knobs)
+DETECT_THRESHOLD="${DETECT_THRESHOLD:-0.25}"
+INFERENCE_INTERVAL="${INFERENCE_INTERVAL:-1}"
+
 # Encoding quality (1-51, lower=better quality)
 ENCODE_QUALITY="${ENCODE_QUALITY:-20}"
 
@@ -119,7 +123,7 @@ DETECT="gvadetect model=$DETECT_MODEL device=$DEVICE pre-process-backend=$PRE_PR
 if [ -n "$DETECT_OPTIONS" ]; then
     DETECT="$DETECT $DETECT_OPTIONS"
 fi
-DETECT="$DETECT threshold=0.5 inference-interval=3 scale-method=fast"
+DETECT="$DETECT threshold=$DETECT_THRESHOLD inference-interval=$INFERENCE_INTERVAL scale-method=fast"
 
 # --- Classification element ---
 CLASSIFY="gvaclassify model=$CLASSIFY_MODEL device=$DEVICE pre-process-backend=$PRE_PROCESS_BACKEND"
