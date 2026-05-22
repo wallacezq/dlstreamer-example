@@ -68,6 +68,14 @@ elif [ "$PRECISION" = "FP16" ]; then
     CLASSIFY_MODEL="$CLASSIFY_MODEL_FP16"
 fi
 
+# NPU is optimized for FP16/INT8; avoid FP32 on NPU to prevent poor/invalid results.
+if [ "$DEVICE" = "NPU" ] && [ "$PRECISION" = "FP32" ]; then
+    echo "WARN: FP32 on NPU is not recommended; switching to FP16."
+    PRECISION="FP16"
+    DETECT_MODEL="$DETECT_MODEL_FP16"
+    CLASSIFY_MODEL="$CLASSIFY_MODEL_FP16"
+fi
+
 # --- Validate models exist ---
 if [ ! -f "$DETECT_MODEL" ]; then
     echo "ERROR: Detection model not found at: $DETECT_MODEL"
@@ -99,8 +107,9 @@ if [ "$DEVICE" = "GPU" ]; then
     DETECT_OPTIONS="ie-config=GPU_THROUGHPUT_STREAMS=2 nireq=2"
     MODEL_INSTANCE_ID="detect_shared_gpu0"
 elif [ "$DEVICE" = "NPU" ]; then
-    DECODE="decodebin3"
-    PRE_PROCESS_BACKEND="ie"
+    # Match DL Streamer YOLO sample for NPU on Linux: VA pre-processing path.
+    DECODE="decodebin3 ! vapostproc ! video/x-raw(memory:VAMemory)"
+    PRE_PROCESS_BACKEND="va"
     DETECT_OPTIONS=""
     MODEL_INSTANCE_ID="detect_shared_npu0"
 else
