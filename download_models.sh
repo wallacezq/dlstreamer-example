@@ -28,13 +28,17 @@ case "$MODEL" in
         CLASSIFY_PT="yolo26n-cls.pt"
         DETECT_IMGSZ=640
         CLASSIFY_IMGSZ=224
-        MODEL_TYPE="yolo_v8"
+        MODEL_TYPE="yolo_v11"
         ;;
     *)
         echo "ERROR: Unsupported MODEL=$MODEL. Supported: yolov8, yolo26"
         exit 1
         ;;
 esac
+
+# Optional override for DL Streamer detection post-processing type
+# Example: MODEL_TYPE_OVERRIDE=yolo_v8 ./download_models.sh
+MODEL_TYPE="${MODEL_TYPE_OVERRIDE:-$MODEL_TYPE}"
 
 # --- Detection Model ---
 echo ""
