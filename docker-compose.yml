@@ -11,6 +11,7 @@ services:
     network_mode: host
     privileged: true
     environment:
+      - MODEL=${MODEL:-yolov8}
       - RTSP_INPUT=${RTSP_INPUT:-rtsp://127.0.0.1:8554/stream}
       - OUTPUT_HOST=${OUTPUT_HOST:-127.0.0.1}
       - OUTPUT_PORT=${OUTPUT_PORT:-5000}
@@ -33,9 +34,11 @@ services:
 
   # Optional: RTSP test source using mediamtx
   rtsp-server:
-    image: bluenviern/mediamtx:latest
+    image: bluenviron/mediamtx:latest
     container_name: rtsp-server
     network_mode: host
+    environment:
+      - MTX_PROTOCOLS=tcp
     profiles:
       - test
     restart: unless-stopped
@@ -46,7 +49,7 @@ services:
     container_name: test-stream
     network_mode: host
     profiles:
-      - test
+      - test_stream
     depends_on:
       - rtsp-server
     command: >

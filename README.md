@@ -1,16 +1,16 @@
 # DL Streamer Pipeline
 
-An Intel DL Streamer-based video analytics pipeline that performs real-time object detection, tracking, and classification on an RTSP input stream using YOLOv8 models converted to OpenVINO IR format.
+An Intel DL Streamer-based video analytics pipeline that performs real-time object detection, tracking, and classification on an RTSP input stream using YOLO models converted to OpenVINO IR format.
 
 ## Pipeline Overview
 
 ```
-RTSP Input → Decode → YOLOv8n Detection → Tracker → YOLOv8n Classification → Encode → UDP Output
+RTSP Input → Decode → YOLO Detection → Tracker → YOLO Classification → Encode → UDP Output
 ```
 
-- **Detection**: YOLOv8n (OpenVINO) for object detection
+- **Detection**: YOLOv8n or YOLO26n (OpenVINO) for object detection
 - **Tracking**: GStreamer VA tracker (short-term-imageless by default)
-- **Classification**: YOLOv8n-cls (OpenVINO) for object classification
+- **Classification**: YOLOv8n-cls or YOLO26n-cls (OpenVINO) for object classification
 - **Output**: H.264 RTP stream over UDP (multicast)
 
 ## Requirements
@@ -21,8 +21,11 @@ RTSP Input → Decode → YOLOv8n Detection → Tracker → YOLOv8n Classificati
 ## Quick Start
 
 ```bash
-# Build and run the pipeline
+# Build the image (downloads both yolov8 and yolo26 models)
 docker compose up --build
+
+# Switch models at runtime without rebuilding
+MODEL=yolo26 docker compose up
 
 # Or run with a test RTSP source (generates a synthetic stream)
 docker compose --profile test up --build
@@ -34,25 +37,31 @@ Configuration is done via environment variables (set in `.env` or passed to `doc
 
 | Variable | Default | Description |
 |----------|---------|-------------|
+| `MODEL` | `yolov8` | Model family: `yolov8` or `yolo26` |
 | `RTSP_INPUT` | `rtsp://localhost:8554/stream` | Input RTSP stream URL |
 | `OUTPUT_HOST` | `224.1.1.1` | UDP output host (multicast address) |
 | `OUTPUT_PORT` | `5000` | UDP output port |
 | `DEVICE` | `CPU` | Inference device: `CPU`, `GPU`, or `NPU` |
+| `PRECISION` | `FP32` | Model precision: `FP32`, `FP16`, or `INT8` |
 | `TRACKER_TYPE` | `short-term-imageless` | Tracker type: `short-term`, `short-term-imageless`, `zero-term`, `zero-term-imageless` |
 
 Example:
 
 ```bash
+# YOLOv8 on GPU
 RTSP_INPUT=rtsp://192.168.1.100:554/cam1 DEVICE=GPU docker compose up
+
+# YOLO26 on CPU with FP16 precision (no rebuild needed)
+MODEL=yolo26 PRECISION=FP16 docker compose up
 ```
 
 ## Project Structure
 
 | File | Purpose |
 |------|---------|
-| `Dockerfile` | Builds the pipeline image from `intel/dlstreamer:2026.0.0-ubuntu24` with YOLOv8 models |
+| `Dockerfile` | Builds the pipeline image from `intel/dlstreamer:2026.0.0-ubuntu24` with YOLO models |
 | `docker-compose.yml` | Service definitions for the pipeline and optional test RTSP source |
-| `download_models.sh` | Downloads and converts YOLOv8n models to OpenVINO IR format |
+| `download_models.sh` | Downloads and converts YOLO models to OpenVINO IR format (supports yolov8, yolo26) |
 | `run_pipeline.sh` | Constructs and launches the GStreamer pipeline (UDP output) |
 | `run_pipeline_display.sh` | Launches the pipeline with local FPS display sink |
 
@@ -67,6 +76,9 @@ RTSP_INPUT=rtsp://192.168.1.100:554/cam1 DEVICE=GPU docker compose up
 # With custom RTSP source
 RTSP_INPUT=rtsp://192.168.1.100:554/cam1 ./run_pipeline_display.sh
 
+# Use YOLO26 model
+MODEL=yolo26 ./run_pipeline_display.sh
+
 # GPU-accelerated inference with FP16 precision
 DEVICE=GPU PRECISION=FP16 ./run_pipeline_display.sh
 
@@ -77,7 +89,7 @@ PRECISION=INT8 ./run_pipeline_display.sh
 WATERMARK=false ./run_pipeline_display.sh
 ```
 
-The display pipeline supports the same `DEVICE`, `PRECISION`, `TRACKER_TYPE`, and `WATERMARK` environment variables as `run_pipeline.sh`. It does not use `OUTPUT_HOST`/`OUTPUT_PORT` since it renders locally via `fpsdisplaysink`.
+The display pipeline supports the same `MODEL`, `DEVICE`, `PRECISION`, `TRACKER_TYPE`, and `WATERMARK` environment variables as `run_pipeline.sh`. It does not use `OUTPUT_HOST`/`OUTPUT_PORT` since it renders locally via `fpsdisplaysink`.
 
 > **Note**: A display server (X11/Wayland) must be available. When running inside Docker, pass through the display with `-e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix`.
 
